@@ -9,3 +9,7 @@ Route::get('/', function () {
 Route::get('/dal-list', function () {
     return view('dal-list');
 });
+
+Route::get('/dal-table', function () {
+    return view('dal-table');
+});
