@@ -24,13 +24,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 	
 		
-	Route::get('/dal-list', function () {
+	/*
+    Route::get('/dal-list', function () {
 		return view('dal-list');
 	});
 
 	Route::get('/dal-table', function () {
 		return view('dal-table');
 	});
+    */
 
     // DAL Maintenance — view available to all authenticated users
     Route::get('/dal-manage', [DalEntryController::class, 'index'])->name('dal.manage.index');
