@@ -24,26 +24,42 @@
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
                 <thead>
-                    <tr style="border-bottom:2px solid #f7d768;">
-                        <th style="text-align:left;padding:5px 12px 7px 0;font-weight:700;color:#374151;width:160px;">Code</th>
-                        <th style="text-align:left;padding:5px 0 7px;font-weight:700;color:#374151;">Description</th>
+                    <tr>
+                        <th style="text-align:left;padding:4px 16px 8px 0;font-weight:600;color:#94a3b8;font-size:11.5px;width:90px;">Code</th>
+                        <th style="text-align:left;padding:4px 0 8px;font-weight:600;color:#94a3b8;font-size:11.5px;">Description</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach([
-                        ['code' => 'A / JA', 'desc' => 'Approve / Joint Approval'],
-                        ['code' => 'R / JR', 'desc' => 'Recommend / Joint Recommendation'],
-                        ['code' => 'P / JP', 'desc' => 'Propose / Joint Proposal'],
-                        ['code' => 'I',      'desc' => 'Inform'],
-                        ['code' => '#',      'desc' => 'Either one to approve / recommend / propose based on the endorsed reporting line'],
-                    ] as $i => $row)
-                    <tr style="{{ $i % 2 === 0 ? '' : 'background:#f1f5f9;' }}border-bottom:1px solid #e2e8f0;">
-                        <td style="padding:6px 12px 6px 0;">
-                            <code style="display:inline-block;background:#0b3b6310;color:#0b3b63;border:1px solid #bfdbfe;border-radius:5px;padding:2px 8px;font-size:12px;font-weight:700;letter-spacing:0.03em;">{{ $row['code'] }}</code>
+                    <tr style="border-top:1px solid #e2e8f0;">
+                        <td style="padding:9px 16px 9px 0;vertical-align:middle;">
+                            <span style="display:inline-block;background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:0.03em;">A / JA</span>
                         </td>
-                        <td style="padding:6px 0;color:#374151;">{{ $row['desc'] }}</td>
+                        <td style="padding:9px 0;color:#374151;vertical-align:middle;">Approve / Joint Approval</td>
                     </tr>
-                    @endforeach
+                    <tr style="border-top:1px solid #e2e8f0;">
+                        <td style="padding:9px 16px 9px 0;vertical-align:middle;">
+                            <span style="display:inline-block;background:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:0.03em;">R / JR</span>
+                        </td>
+                        <td style="padding:9px 0;color:#374151;vertical-align:middle;">Recommend / Joint Recommendation</td>
+                    </tr>
+                    <tr style="border-top:1px solid #e2e8f0;">
+                        <td style="padding:9px 16px 9px 0;vertical-align:middle;">
+                            <span style="display:inline-block;background:#fefce8;color:#a16207;border:1.5px solid #fde047;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:0.03em;">P / JP</span>
+                        </td>
+                        <td style="padding:9px 0;color:#374151;vertical-align:middle;">Propose / Joint Proposal</td>
+                    </tr>
+                    <tr style="border-top:1px solid #e2e8f0;">
+                        <td style="padding:9px 16px 9px 0;vertical-align:middle;">
+                            <span style="display:inline-block;background:#faf5ff;color:#7c3aed;border:1.5px solid #c4b5fd;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:0.03em;">I</span>
+                        </td>
+                        <td style="padding:9px 0;color:#374151;vertical-align:middle;">Inform</td>
+                    </tr>
+                    <tr style="border-top:1px solid #e2e8f0;">
+                        <td style="padding:9px 16px 9px 0;vertical-align:middle;">
+                            <span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1.5px solid #fdba74;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:0.03em;">#</span>
+                        </td>
+                        <td style="padding:9px 0;color:#374151;vertical-align:middle;">Either one to approve / recommend / propose based on the endorsed reporting line</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
