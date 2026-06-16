@@ -15,6 +15,39 @@
     </x-slot>
 
     <div style="max-width:900px;">
+
+        {{-- ── LEGEND ── --}}
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px 24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <svg style="width:15px;height:15px;fill:#0b3b63;flex-shrink:0;" viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+                <span style="font-size:12px;font-weight:700;color:#0b3b63;letter-spacing:0.06em;text-transform:uppercase;">Legend</span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #f7d768;">
+                        <th style="text-align:left;padding:5px 12px 7px 0;font-weight:700;color:#374151;width:160px;">Code</th>
+                        <th style="text-align:left;padding:5px 0 7px;font-weight:700;color:#374151;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach([
+                        ['code' => 'A / JA', 'desc' => 'Approve / Joint Approval'],
+                        ['code' => 'R / JR', 'desc' => 'Recommend / Joint Recommendation'],
+                        ['code' => 'P / JP', 'desc' => 'Propose / Joint Proposal'],
+                        ['code' => 'I',      'desc' => 'Inform'],
+                        ['code' => '#',      'desc' => 'Either one to approve / recommend / propose based on the endorsed reporting line'],
+                    ] as $i => $row)
+                    <tr style="{{ $i % 2 === 0 ? '' : 'background:#f1f5f9;' }}border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:6px 12px 6px 0;">
+                            <code style="display:inline-block;background:#0b3b6310;color:#0b3b63;border:1px solid #bfdbfe;border-radius:5px;padding:2px 8px;font-size:12px;font-weight:700;letter-spacing:0.03em;">{{ $row['code'] }}</code>
+                        </td>
+                        <td style="padding:6px 0;color:#374151;">{{ $row['desc'] }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px 32px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
 
             {{-- ── UPDATE FORM ── --}}
