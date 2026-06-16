@@ -1,0 +1,62 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <a href="{{ route('dal.manage.index', ['type' => $dalEntry->type]) }}"
+               style="width:32px;height:32px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:background 0.15s;"
+               onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"
+               title="Back to DAL Manage">
+                <svg style="width:16px;height:16px;fill:currentColor;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </a>
+            <div>
+                <h2 style="font-size:18px;font-weight:700;color:#0b3b63;">Edit DAL Entry <span style="color:#94a3b8;font-weight:500;">#{{ $dalEntry->id }}</span></h2>
+                <p style="font-size:13px;color:#94a3b8;margin-top:2px;">{{ $dalEntry->section_title }}</p>
+            </div>
+        </div>
+    </x-slot>
+
+    <div style="max-width:900px;">
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px 32px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+
+            {{-- ── UPDATE FORM ── --}}
+            <form method="POST" action="{{ route('dal.manage.update', $dalEntry) }}" id="edit-dal-form">
+                @csrf
+                @method('PUT')
+                @include('dal._form', ['approverColumns' => $approverColumns, 'entry' => $dalEntry])
+
+                <div style="display:flex;align-items:center;gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid #f1f5f9;">
+                    <button type="submit" id="update-dal-btn"
+                        style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#0b3b63,#1e5f94);color:#f7d768;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;padding:11px 28px;cursor:pointer;box-shadow:0 4px 12px rgba(11,59,99,0.25);transition:opacity 0.2s,transform 0.15s;"
+                        onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+                        <svg style="width:15px;height:15px;fill:currentColor;" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        Update Entry
+                    </button>
+
+                    <a href="{{ route('dal.manage.index', ['type' => $dalEntry->type]) }}"
+                       style="display:inline-flex;align-items:center;padding:11px 22px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;transition:background 0.15s;"
+                       onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                        Cancel
+                    </a>
+
+                    {{-- Delete button triggers the separate delete form below (outside this form) --}}
+                    <button type="button" id="delete-dal-btn"
+                        onclick="document.getElementById('delete-dal-form').dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}))"
+                        style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;padding:11px 20px;cursor:pointer;transition:background 0.15s,border-color 0.15s,transform 0.12s;"
+                        onmouseover="this.style.background='#fee2e2';this.style.transform='translateY(-1px)'"
+                        onmouseout="this.style.background='#fef2f2';this.style.transform=''">
+                        <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        Delete Entry
+                    </button>
+                </div>
+            </form>
+
+            {{-- ── DELETE FORM — kept OUTSIDE the update form to avoid nested-form conflicts ── --}}
+            <form method="POST" action="{{ route('dal.manage.destroy', $dalEntry) }}"
+                  id="delete-dal-form"
+                  onsubmit="return confirm('Permanently delete this entry? This cannot be undone.')">
+                @csrf
+                @method('DELETE')
+            </form>
+
+        </div>
+    </div>
+</x-app-layout>

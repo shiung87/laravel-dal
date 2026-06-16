@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\DalEntry;
+use App\Observers\DalEntryObserver;
+use App\Services\SsoConfigLoader;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +23,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        DalEntry::observe(DalEntryObserver::class);
+
+        // Load Azure SSO credentials from the database into config at runtime
+        SsoConfigLoader::boot();
+
+        // Register the SocialiteProviders event listener for the Azure driver
+        Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            \SocialiteProviders\Azure\AzureExtendSocialite::class
+        );
     }
 }

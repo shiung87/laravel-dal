@@ -56,7 +56,7 @@ nav button {
     background: white;
     border-radius: 10px;
     padding: 10px;
-	max-height: 400px
+	max-height: 1200px
 }
 
 table {
