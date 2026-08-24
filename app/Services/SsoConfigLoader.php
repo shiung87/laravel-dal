@@ -3,16 +3,14 @@
 namespace App\Services;
 
 use App\Models\SsoSetting;
-use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class SsoConfigLoader
 {
     /**
-     * Read SSO settings from the database and push them into the
-     * Socialite/Azure config at runtime so the admin UI drives everything.
+     * Read SSO settings from the database (with .env fallback) and push them into
+     * the Socialite/Azure config at runtime so the system works seamlessly.
      *
-     * Called from AppServiceProvider::boot() — safe to call even when the
-     * sso_settings table doesn't exist yet (e.g. before migrations run).
+     * Called from AppServiceProvider::boot().
      */
     public static function boot(): void
     {
@@ -21,15 +19,24 @@ class SsoConfigLoader
 
             config([
                 'services.azure' => [
-                    'client_id'     => $sso->client_id,
-                    'client_secret' => $sso->client_secret,
+                    'client_id'     => $sso->effectiveClientId(),
+                    'client_secret' => $sso->effectiveClientSecret(),
                     'redirect'      => $sso->effectiveRedirectUri(),
-                    'tenant'        => $sso->tenant_id ?: 'common',
+                    'tenant'        => $sso->effectiveTenantId(),
                     'proxy'         => null,
                 ],
             ]);
         } catch (\Throwable) {
-            // Table not yet migrated — skip silently.
+            // Fallback directly to env configuration
+            config([
+                'services.azure' => [
+                    'client_id'     => env('MICROSOFT_CLIENT_ID'),
+                    'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
+                    'redirect'      => env('MICROSOFT_REDIRECT_URI', url('/auth/sso/callback')),
+                    'tenant'        => env('MICROSOFT_TENANT_ID', 'common'),
+                    'proxy'         => null,
+                ],
+            ]);
         }
     }
 }

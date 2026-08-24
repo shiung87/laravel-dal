@@ -219,7 +219,7 @@
                         <label for="tenant_id">Tenant ID (Directory ID)</label>
                         <input id="tenant_id" name="tenant_id" type="text" class="field-input"
                                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                               value="{{ old('tenant_id', $sso->tenant_id) }}">
+                               value="{{ old('tenant_id', $sso->tenant_id ?: env('MICROSOFT_TENANT_ID')) }}">
                         <p class="field-hint">Found in Azure Portal → Azure Active Directory → Properties → Tenant ID</p>
                     </div>
 
@@ -227,7 +227,7 @@
                         <label for="client_id">Application (Client) ID</label>
                         <input id="client_id" name="client_id" type="text" class="field-input"
                                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                               value="{{ old('client_id', $sso->client_id) }}">
+                               value="{{ old('client_id', $sso->client_id ?: env('MICROSOFT_CLIENT_ID')) }}">
                         <p class="field-hint">Found in Azure Portal → App Registrations → your app → Overview</p>
                     </div>
 
@@ -235,14 +235,14 @@
                         <label for="client_secret">Client Secret</label>
                         <div style="position:relative;">
                             <input id="client_secret" name="client_secret" type="password" class="field-input"
-                                   placeholder="{{ $sso->client_secret ? '●●●●●●●● (saved — leave blank to keep)' : 'Paste your client secret value here' }}"
+                                   placeholder="{{ ($sso->client_secret || env('MICROSOFT_CLIENT_SECRET')) ? '●●●●●●●● (configured — leave blank to keep)' : 'Paste your client secret value here' }}"
                                    style="padding-right:44px;"
                                    autocomplete="new-password">
                             <button type="button" id="toggle-secret"
                                     onclick="var i=document.getElementById('client_secret');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'"
                                     style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:rgba(248,250,252,0.4);">👁</button>
                         </div>
-                        <p class="field-hint">Azure Portal → App Registrations → Certificates &amp; secrets → New client secret. Leave blank to keep the current value.</p>
+                        <p class="field-hint">Azure Portal → App Registrations → Certificates &amp; secrets → New client secret. Leave blank to keep the active value.</p>
                     </div>
 
                     <div class="field-group">
