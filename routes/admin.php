@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminEmailController;
 use App\Http\Controllers\Admin\AdminSsoController;
 use App\Http\Controllers\Admin\AdminUserController;
 use Illuminate\Support\Facades\Route;
@@ -40,4 +41,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // SSO Settings
     Route::get('sso', [AdminSsoController::class, 'show'])->name('sso.show');
     Route::post('sso', [AdminSsoController::class, 'update'])->name('sso.update');
+    // Email Notification Settings & Test
+    Route::get('email', [AdminEmailController::class, 'show'])->name('email.show');
+    Route::post('email', [AdminEmailController::class, 'update'])->name('email.update');
+    Route::post('email/test', [AdminEmailController::class, 'testEmail'])->name('email.test');
 });

@@ -49,5 +49,7 @@ class ActivityLog extends Model
         'sso_login'          => ['label' => 'SSO Login',            'color' => 'blue'],
         'sso_enabled'        => ['label' => 'SSO Enabled',          'color' => 'green'],
         'sso_disabled'       => ['label' => 'SSO Disabled',         'color' => 'slate'],
+        'email_settings_updated' => ['label' => 'Email Config Updated', 'color' => 'amber'],
+        'email_test_sent'        => ['label' => 'Email Test Sent',      'color' => 'cyan'],
     ];
 }

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\DalEntry;
 use App\Observers\DalEntryObserver;
+use App\Services\EmailConfigLoader;
 use App\Services\SsoConfigLoader;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Load Azure SSO credentials from the database into config at runtime
         SsoConfigLoader::boot();
+
+        // Load Email notification settings from the database into config at runtime
+        EmailConfigLoader::boot();
 
         // Register the SocialiteProviders event listener for the Azure driver
         Event::listen(
