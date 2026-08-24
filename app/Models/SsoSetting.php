@@ -84,14 +84,10 @@ class SsoSetting extends Model
     public function isEnabled(): bool
     {
         if ($this->exists && !is_null($this->enabled)) {
-            // If explicitly enabled in DB
-            if ($this->enabled) {
-                return true;
-            }
+            return (bool) $this->enabled;
         }
 
-        // Enabled by default if environment credentials exist
-        return filled(env('MICROSOFT_CLIENT_ID'));
+        return filled(env('MICROSOFT_CLIENT_ID')) || filled(config('services.azure.client_id'));
     }
 
     /**
