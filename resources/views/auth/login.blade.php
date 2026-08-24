@@ -128,6 +128,6 @@
     @endif
 
     <div class="bottom-link">
-        Don't have an account? <a class="auth-link" href="{{ route('register') }}">Create account</a>
+        Need an account? Please contact your system administrator to request access.
     </div>
 </x-guest-layout>

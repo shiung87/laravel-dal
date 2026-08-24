@@ -33,25 +33,39 @@
     }
 </style>
 
-{{-- Type & basic info --}}
+@php
+    $currentCategory = old('category', $dalEntry->category ?? ($selectedCategory ?? 'finance'));
+@endphp
+
+{{-- Category & basic info --}}
 <div class="f-section">
-    <div class="f-section-title">Entry Details</div>
+    <div class="f-section-title">Category &amp; Clause Details</div>
     <div class="f-grid f-grid-3">
+        {{-- Category Selection --}}
         <div class="f-group">
-            <label for="f_type">Type *</label>
-            <select id="f_type" name="type" class="f-select" required>
-                <option value="capital"    {{ old('type', $entry->type ?? '') === 'capital'    ? 'selected' : '' }}>Capital Expenditure</option>
-                <option value="noncapital" {{ old('type', $entry->type ?? '') === 'noncapital' ? 'selected' : '' }}>Non-Capital Expenditure</option>
+            <label for="f_category">DAL Category *</label>
+            <select id="f_category" name="category" class="f-select" required onchange="onCategoryChange(this.value)">
+                @foreach(\App\Models\DalEntry::$categories as $catKey => $cat)
+                    <option value="{{ $catKey }}" {{ $currentCategory === $catKey ? 'selected' : '' }}>
+                        {{ $cat['full_title'] }}
+                    </option>
+                @endforeach
+            </select>
+            @error('category')<p class="f-error">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Sub-type (Only relevant if category is finance) --}}
+        <div class="f-group" id="group_type" style="display: {{ $currentCategory === 'finance' ? 'block' : 'none' }};">
+            <label for="f_type">Finance Sub-Section</label>
+            <select id="f_type" name="type" class="f-select">
+                <option value="capital"    {{ old('type', $dalEntry->type ?? '') === 'capital'    ? 'selected' : '' }}>4.0 Capital Expenditure</option>
+                <option value="noncapital" {{ old('type', $dalEntry->type ?? '') === 'noncapital' ? 'selected' : '' }}>5.0 Non-Capital Expenditure</option>
+                <option value="treasury"   {{ old('type', $dalEntry->type ?? '') === 'treasury'   ? 'selected' : '' }}>6.0 Treasury &amp; Financing</option>
             </select>
             @error('type')<p class="f-error">{{ $message }}</p>@enderror
         </div>
-        <div class="f-group" style="grid-column: span 2">
-            <label for="f_section_title">Section Title *</label>
-            <input id="f_section_title" name="section_title" class="f-input" type="text"
-                value="{{ old('section_title', $entry->section_title ?? '') }}"
-                placeholder="e.g. 4.1 Acquisition of Budgeted Capital Expenditure" required>
-            @error('section_title')<p class="f-error">{{ $message }}</p>@enderror
-        </div>
+
+        {{-- Row Number --}}
         <div class="f-group">
             <label for="f_row_number" style="display:flex;align-items:center;gap:6px;">
                 Row #&nbsp;<span style="font-weight:400;color:#94a3b8;font-size:11px;">*</span>
@@ -60,25 +74,45 @@
                 @endisset
             </label>
             <input id="f_row_number" name="row_number" class="f-input" type="number" min="1"
-                value="{{ old('row_number', $entry->row_number ?? '') }}"
+                value="{{ old('row_number', $dalEntry->row_number ?? '') }}"
                 {{ isset($isCreate) ? 'placeholder=auto' : 'required' }}>
             @error('row_number')<p class="f-error">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Section Title --}}
+        <div class="f-group" style="grid-column: 1 / -1;">
+            <label for="f_section_title">Section / Activity Title *</label>
+            <input id="f_section_title" name="section_title" class="f-input" type="text"
+                value="{{ old('section_title', $dalEntry->section_title ?? '') }}"
+                placeholder="e.g. 1.1 Approval of Annual Statutory Audited Accounts, 2.1 Award of Contract..." required>
+            @error('section_title')<p class="f-error">{{ $message }}</p>@enderror
         </div>
     </div>
 </div>
 
+<script>
+function onCategoryChange(cat) {
+    const typeGroup = document.getElementById('group_type');
+    if (typeGroup) {
+        typeGroup.style.display = (cat === 'finance') ? 'block' : 'none';
+    }
+}
+</script>
+
 @isset($isCreate)
 <script>
 (function () {
-    const typeEl    = document.getElementById('f_type');
-    const titleEl   = document.getElementById('f_section_title');
-    const rowEl     = document.getElementById('f_row_number');
-    const hintEl    = document.getElementById('row-hint');
-    const endpoint  = '{{ route("dal.manage.next-row-number") }}';
+    const categoryEl = document.getElementById('f_category');
+    const typeEl     = document.getElementById('f_type');
+    const titleEl    = document.getElementById('f_section_title');
+    const rowEl      = document.getElementById('f_row_number');
+    const hintEl     = document.getElementById('row-hint');
+    const endpoint   = '{{ route("dal.manage.next-row-number") }}';
     let debounce;
 
     function fetchNext() {
-        const type  = typeEl.value;
+        const cat   = categoryEl.value;
+        const type  = (cat === 'finance') ? typeEl.value : '';
         const title = titleEl.value.trim();
         if (!title) {
             rowEl.placeholder = 'auto';
@@ -91,7 +125,7 @@
             hintEl.textContent = '…';
             hintEl.style.display = 'inline';
             try {
-                const url = `${endpoint}?type=${encodeURIComponent(type)}&section_title=${encodeURIComponent(title)}`;
+                const url = `${endpoint}?category=${encodeURIComponent(cat)}&type=${encodeURIComponent(type)}&section_title=${encodeURIComponent(title)}`;
                 const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await res.json();
                 rowEl.value       = data.next;
@@ -103,6 +137,10 @@
         }, 400);
     }
 
+    categoryEl.addEventListener('change', () => {
+        onCategoryChange(categoryEl.value);
+        fetchNext();
+    });
     typeEl.addEventListener('change', fetchNext);
     titleEl.addEventListener('input', fetchNext);
 
@@ -112,17 +150,16 @@
 </script>
 @endisset
 
-
 {{-- Amount thresholds --}}
 <div class="f-section">
-    <div class="f-section-title">Amount Thresholds</div>
+    <div class="f-section-title">Amount Thresholds (Optional by region)</div>
     <div class="f-grid f-grid-4">
         @foreach(['malaysia' => 'Malaysia (RM)', 'singapore' => 'Singapore (SGD)', 'australia' => 'Australia (AUD)', 'vietnam' => 'Vietnam (USD)', 'japan' => 'Japan (JPY)'] as $col => $label)
         <div class="f-group">
             <label for="f_{{ $col }}">{{ $label }}</label>
             <input id="f_{{ $col }}" name="{{ $col }}" class="f-input" type="text"
-                value="{{ old($col, $entry->$col ?? '') }}"
-                placeholder="e.g. > RM250k">
+                value="{{ old($col, $dalEntry->$col ?? '') }}"
+                placeholder="e.g. > RM250k or Any Amount">
             @error($col)<p class="f-error">{{ $message }}</p>@enderror
         </div>
         @endforeach
@@ -131,13 +168,13 @@
 
 {{-- Approver columns --}}
 <div class="f-section">
-    <div class="f-section-title">Approver Roles <span style="font-size:11px;font-weight:400;text-transform:none;color:#6b7280;">(A = Approve, R = Recommend, P = Propose)</span></div>
+    <div class="f-section-title">Approver Roles <span style="font-size:11px;font-weight:400;text-transform:none;color:#6b7280;">(A = Approve, R = Recommend, P = Propose, E = Endorse, I = Inform)</span></div>
     <div class="f-grid f-grid-4">
         @foreach($approverColumns as $col => $label)
         <div class="f-group">
             <label for="f_{{ $col }}">{{ $label }}</label>
             <input id="f_{{ $col }}" name="{{ $col }}" class="f-input" type="text"
-                value="{{ old($col, $entry->$col ?? '') }}"
+                value="{{ old($col, $dalEntry->$col ?? '') }}"
                 placeholder="A / R / P / R#">
             @error($col)<p class="f-error">{{ $message }}</p>@enderror
         </div>
@@ -147,11 +184,11 @@
 
 {{-- Remarks --}}
 <div class="f-section">
-    <div class="f-section-title">Remarks & Clarification</div>
+    <div class="f-section-title">Remarks &amp; Clarification</div>
     <div class="f-group">
         <label for="f_remarks">Remarks</label>
         <textarea id="f_remarks" name="remarks" class="f-textarea"
-            placeholder="Additional notes or clarifications...">{{ old('remarks', $entry->remarks ?? '') }}</textarea>
+            placeholder="Additional governance notes, condition precedents, or committee quorum requirements...">{{ old('remarks', $dalEntry->remarks ?? '') }}</textarea>
         @error('remarks')<p class="f-error">{{ $message }}</p>@enderror
     </div>
 </div>

@@ -498,6 +498,7 @@ class DalEntriesSeeder extends Seeder
         // Insert capital entries
         foreach ($capital as $entry) {
             DB::table('dal_entries')->insert(array_merge([
+                'category'       => 'finance',
                 'type'           => 'capital',
                 'section_title'  => null,
                 'row_number'     => null,
@@ -533,7 +534,299 @@ class DalEntriesSeeder extends Seeder
         // Insert non-capital entries
         foreach ($noncapital as $entry) {
             DB::table('dal_entries')->insert(array_merge([
+                'category'       => 'finance',
                 'type'           => 'noncapital',
+                'section_title'  => null,
+                'row_number'     => null,
+                'malaysia'       => null,
+                'singapore'      => null,
+                'australia'      => null,
+                'vietnam'        => null,
+                'japan'          => null,
+                'shr'            => null,
+                'sub_shr'        => null,
+                'bod'            => null,
+                'sub_bod'        => null,
+                'nrc'            => null,
+                'ac'             => null,
+                'rmc'            => null,
+                'tpc'            => null,
+                'fic'            => null,
+                'sc'             => null,
+                'sub_exco'       => null,
+                'ceo'            => null,
+                'deputy_ceo_coo' => null,
+                'sevp'           => null,
+                'evp'            => null,
+                'dgm'            => null,
+                'gm'             => null,
+                'deputy_gm_head' => null,
+                'remarks'        => null,
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ], $entry));
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 1.0 CORPORATE MATTER
+        // ─────────────────────────────────────────────────────────────────────
+        $corporate = [
+            [
+                'category'       => 'corporate_matter',
+                'section_title'  => '1.1 Approval of Annual Statutory Audited Financial Statements',
+                'row_number'     => 1,
+                'malaysia'       => 'Any Amount',
+                'bod'            => 'A',
+                'ac'             => 'R',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Requires Audit Committee review prior to Board approval.',
+            ],
+            [
+                'category'       => 'corporate_matter',
+                'section_title'  => '1.2 Incorporation, Acquisition, or Dissolution of Entities/Joint Ventures',
+                'row_number'     => 1,
+                'malaysia'       => 'Any Amount',
+                'shr'            => 'A',
+                'bod'            => 'R',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Shareholders approval required for major acquisitions or dissolutions.',
+            ],
+            [
+                'category'       => 'corporate_matter',
+                'section_title'  => '1.3 Execution of Power of Attorney (POA)',
+                'row_number'     => 1,
+                'malaysia'       => 'Any Amount',
+                'bod'            => 'A',
+                'ceo'            => 'R',
+                'deputy_ceo_coo' => 'P',
+                'remarks'        => 'Specific or General Power of Attorney executed under common seal.',
+            ],
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 2.0 TENDER & CONTRACTS
+        // ─────────────────────────────────────────────────────────────────────
+        $tender = [
+            [
+                'category'       => 'tender_contracts',
+                'section_title'  => '2.1 Award of Contract via Open Tender',
+                'row_number'     => 1,
+                'malaysia'       => '> RM10 mil',
+                'singapore'      => '> SGD3 mil',
+                'australia'      => '> AUD3 mil',
+                'bod'            => 'A',
+                'tpc'            => 'R',
+                'ceo'            => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Tender Procurement Committee (TPC) recommendation required.',
+            ],
+            [
+                'category'       => 'tender_contracts',
+                'section_title'  => '2.1 Award of Contract via Open Tender',
+                'row_number'     => 2,
+                'malaysia'       => '<= RM10 mil',
+                'singapore'      => '<= SGD3 mil',
+                'australia'      => '<= AUD3 mil',
+                'tpc'            => 'A',
+                'ceo'            => 'R',
+                'sevp'           => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Approved by Tender Procurement Committee.',
+            ],
+            [
+                'category'       => 'tender_contracts',
+                'section_title'  => '2.2 Contract Variation Order (VO)',
+                'row_number'     => 1,
+                'malaysia'       => '> 10% of Contract Value',
+                'tpc'            => 'A',
+                'ceo'            => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Cumulative variation exceeding 10% of original contract sum.',
+            ],
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 3.0 LEGAL
+        // ─────────────────────────────────────────────────────────────────────
+        $legal = [
+            [
+                'category'       => 'legal',
+                'section_title'  => '3.1 Initiation / Settlement of Legal Proceedings & Disputes',
+                'row_number'     => 1,
+                'malaysia'       => '> RM500k',
+                'bod'            => 'A',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Subject to Head of Legal concurrence.',
+            ],
+            [
+                'category'       => 'legal',
+                'section_title'  => '3.1 Initiation / Settlement of Legal Proceedings & Disputes',
+                'row_number'     => 2,
+                'malaysia'       => '<= RM500k',
+                'ceo'            => 'A',
+                'deputy_ceo_coo' => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Settlement within budgeted provision.',
+            ],
+            [
+                'category'       => 'legal',
+                'section_title'  => '3.2 Non-Disclosure Agreements (NDA) & Memoranda of Understanding (MOU)',
+                'row_number'     => 1,
+                'malaysia'       => 'Non-financial',
+                'ceo'            => 'A',
+                'deputy_ceo_coo' => 'A#',
+                'sevp'           => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Standard vetted legal template.',
+            ],
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 7.0 HUMAN CAPITAL
+        // ─────────────────────────────────────────────────────────────────────
+        $humanCapital = [
+            [
+                'category'       => 'human_capital',
+                'section_title'  => '7.1 Annual Manpower Budget & Headcount Plan',
+                'row_number'     => 1,
+                'malaysia'       => 'Any Amount',
+                'bod'            => 'A',
+                'nrc'            => 'R',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Reviewed by Nomination & Remuneration Committee (NRC).',
+            ],
+            [
+                'category'       => 'human_capital',
+                'section_title'  => '7.2 Appointment of Senior Management (VP, EVP, SEVP)',
+                'row_number'     => 1,
+                'malaysia'       => 'Per policy',
+                'bod'            => 'A',
+                'nrc'            => 'R',
+                'ceo'            => 'R',
+                'remarks'        => 'Executive appointment and remuneration package.',
+            ],
+            [
+                'category'       => 'human_capital',
+                'section_title'  => '7.3 Annual Performance Bonus & Salary Increment Pool',
+                'row_number'     => 1,
+                'malaysia'       => 'Total pool',
+                'bod'            => 'A',
+                'nrc'            => 'R',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Subject to corporate performance scorecard achievement.',
+            ],
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 8.0 COMMERCIAL
+        // ─────────────────────────────────────────────────────────────────────
+        $commercial = [
+            [
+                'category'       => 'commercial',
+                'section_title'  => '8.1 Approval of Customer Credit Limits',
+                'row_number'     => 1,
+                'malaysia'       => '> RM5 mil',
+                'fic'            => 'A',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Finance & Investment Committee approval required.',
+            ],
+            [
+                'category'       => 'commercial',
+                'section_title'  => '8.1 Approval of Customer Credit Limits',
+                'row_number'     => 2,
+                'malaysia'       => '<= RM5 mil',
+                'ceo'            => 'A',
+                'deputy_ceo_coo' => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Supported by Credit Risk Assessment report.',
+            ],
+            [
+                'category'       => 'commercial',
+                'section_title'  => '8.2 Special Pricing, Rebates & Commercial Discounts',
+                'row_number'     => 1,
+                'malaysia'       => '> 15% discount',
+                'ceo'            => 'A',
+                'sevp'           => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Deviations from standard published pricing matrix.',
+            ],
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 9.0 ASSET MANAGEMENT
+        // ─────────────────────────────────────────────────────────────────────
+        $assetMgmt = [
+            [
+                'category'       => 'asset_management',
+                'section_title'  => '9.1 Disposal / Scrapping of Obsolete Fixed Assets',
+                'row_number'     => 1,
+                'malaysia'       => '> RM100k net book value',
+                'ceo'            => 'A',
+                'fic'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Asset disposal through competitive bidding or salvage.',
+            ],
+            [
+                'category'       => 'asset_management',
+                'section_title'  => '9.1 Disposal / Scrapping of Obsolete Fixed Assets',
+                'row_number'     => 2,
+                'malaysia'       => '<= RM100k net book value',
+                'deputy_ceo_coo' => 'A',
+                'sevp'           => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Certificate of unserviceability required.',
+            ],
+            [
+                'category'       => 'asset_management',
+                'section_title'  => '9.2 Physical Asset Verification & Discrepancy Write-Off',
+                'row_number'     => 1,
+                'malaysia'       => 'Annual Audit',
+                'ac'             => 'R',
+                'ceo'            => 'A',
+                'sevp'           => 'P',
+                'remarks'        => 'Annual physical count report submitted to Audit Committee.',
+            ],
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 10.0 HSE (HEALTH, SAFETY & ENVIRONMENT)
+        // ─────────────────────────────────────────────────────────────────────
+        $hse = [
+            [
+                'category'       => 'hse',
+                'section_title'  => '10.1 Group HSE Policy & Major Safety Objectives',
+                'row_number'     => 1,
+                'malaysia'       => 'Policy Level',
+                'bod'            => 'A',
+                'rmc'            => 'R',
+                'ceo'            => 'R',
+                'sevp'           => 'P',
+                'remarks'        => 'Reviewed by Board Risk Management Committee (RMC).',
+            ],
+            [
+                'category'       => 'hse',
+                'section_title'  => '10.2 Statutory HSE Regulatory Compliance & Incident Reporting',
+                'row_number'     => 1,
+                'malaysia'       => 'Statutory Filings',
+                'ceo'            => 'A',
+                'sevp'           => 'R',
+                'gm'             => 'P',
+                'remarks'        => 'Regulatory submissions to DOSH, DOE and statutory authorities.',
+            ],
+        ];
+
+        $otherCategories = array_merge($corporate, $tender, $legal, $humanCapital, $commercial, $assetMgmt, $hse);
+
+        foreach ($otherCategories as $entry) {
+            DB::table('dal_entries')->insert(array_merge([
+                'category'       => 'corporate_matter',
+                'type'           => null,
                 'section_title'  => null,
                 'row_number'     => null,
                 'malaysia'       => null,
@@ -567,6 +860,7 @@ class DalEntriesSeeder extends Seeder
 
         $totalCapital    = count($capital);
         $totalNonCapital = count($noncapital);
-        $this->command->info("✅ Seeded {$totalCapital} capital entries and {$totalNonCapital} non-capital entries.");
+        $totalOthers     = count($otherCategories);
+        $this->command->info("✅ Seeded {$totalCapital} capital, {$totalNonCapital} non-capital, and {$totalOthers} multi-category entries.");
     }
 }

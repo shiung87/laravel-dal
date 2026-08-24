@@ -75,9 +75,11 @@ class SsoController extends Controller
                 'password'          => bcrypt(Str::random(40)), // Secure unguessable hash for SSO users
                 'email_verified_at' => now(),                    // Azure accounts are enterprise-verified
                 'is_admin'          => false,
+                'is_sso'            => true,
             ]);
         } else {
-            // Keep verified and update name if previously unset
+            // Keep verified, mark as SSO, and update name if previously unset
+            $user->is_sso = true;
             if (!$user->email_verified_at) {
                 $user->email_verified_at = now();
             }

@@ -12,10 +12,10 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
-
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // Public self-registration is disabled (accounts are created exclusively by Admin or provisioned via Azure AD SSO)
+    Route::get('register', function () {
+        return redirect()->route('login')->with('error', 'Public account registration is disabled. Please contact your system administrator to request an account.');
+    })->name('register');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

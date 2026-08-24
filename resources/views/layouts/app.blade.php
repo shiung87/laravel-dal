@@ -378,33 +378,20 @@
                 Dashboard
             </a>
 
-            <div class="sidebar-section-label">DAL</div>
+            <div class="sidebar-section-label">DAL Categories</div>
 
-            <a href="{{ route('dal.manage.index') }}"
-               class="sidebar-link {{ request()->routeIs('dal.manage.*') ? 'active' : '' }}"
-               id="nav-dal-manage">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                DAL Manage
-            </a>
-
-            @if(Auth::user()->is_admin)
-            <a href="{{ route('dal.manage.create') }}"
-               class="sidebar-link {{ request()->routeIs('dal.manage.create') ? 'active' : '' }}"
-               id="nav-dal-create">
-                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                Add Entry
-                <span class="sidebar-badge">Admin</span>
-            </a>
-            @endif
-
-            <div class="sidebar-section-label">Account</div>
-
-            <a href="{{ route('profile.edit') }}"
-               class="sidebar-link {{ request()->routeIs('profile.*') ? 'active' : '' }}"
-               id="nav-profile">
-                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                Profile
-            </a>
+            @foreach(\App\Models\DalEntry::$categories as $sidebarCatKey => $sidebarCat)
+                @php
+                    $isCatActive = request()->routeIs('dal.manage.*') && (request()->query('category', 'finance') === $sidebarCatKey);
+                @endphp
+                <a href="{{ route('dal.manage.index', ['category' => $sidebarCatKey]) }}"
+                   class="sidebar-link {{ $isCatActive ? 'active' : '' }}"
+                   style="font-size:12.5px;padding:7px 12px;"
+                   id="nav-dal-{{ $sidebarCatKey }}">
+                    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:{{ $isCatActive ? '#f7d768' : '#cbd5e1' }};margin-right:2px;flex-shrink:0;"></span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $sidebarCat['full_title'] }}</span>
+                </a>
+            @endforeach
 
             @if(Auth::user()->is_admin)
             <div class="sidebar-section-label">Admin</div>

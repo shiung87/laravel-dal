@@ -18,7 +18,7 @@
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px 32px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
             <form method="POST" action="{{ route('dal.manage.store') }}" id="create-dal-form">
                 @csrf
-                @include('dal._form', ['approverColumns' => $approverColumns, 'isCreate' => true])
+                @include('dal._form', ['dalEntry' => null, 'approverColumns' => $approverColumns, 'selectedCategory' => $selectedCategory ?? 'finance', 'isCreate' => true])
 
                 <div style="display:flex;gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid #f1f5f9;">
                     <button type="submit" id="create-dal-btn"

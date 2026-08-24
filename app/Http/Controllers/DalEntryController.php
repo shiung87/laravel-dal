@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\DalEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DalEntryController extends Controller
 {
     /**
-     * List all DAL entries.
+     * List DAL entries filtered by category, sub-type, country, approver, and keyword.
      */
     // Map country codes to their DB column names
     private const COUNTRY_COLUMNS = [
@@ -34,7 +35,15 @@ class DalEntryController extends Controller
 
     public function index(Request $request)
     {
-        $type     = $request->query('type', 'capital');
+        $categories = DalEntry::$categories;
+        $categoryKeys = array_keys($categories);
+
+        $category = $request->query('category', 'finance');
+        if (!in_array($category, $categoryKeys, true)) {
+            $category = 'finance';
+        }
+
+        $type     = $request->query('type', ''); // for finance: 'capital', 'noncapital', 'treasury', or '' (all)
         $search   = $request->query('search', '');
         $country  = $request->query('country', '');
         $approver = $request->query('approver', '');
@@ -42,7 +51,19 @@ class DalEntryController extends Controller
         $countryColumn  = self::COUNTRY_COLUMNS[$country]   ?? null;
         $approverColumn = self::APPROVER_COLUMNS[$approver] ?? null;
 
-        $entries = DalEntry::where('type', $type)
+        // Fetch counts per category for the tab bar badges
+        $categoryCounts = DalEntry::select('category', DB::raw('count(*) as count'))
+            ->groupBy('category')
+            ->pluck('count', 'category')
+            ->toArray();
+
+        $entriesQuery = DalEntry::where('category', $category);
+
+        if ($category === 'finance' && filled($type)) {
+            $entriesQuery->where('type', $type);
+        }
+
+        $entries = $entriesQuery
             ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
                 $q->where('section_title', 'like', "%{$search}%")
                   ->orWhere('malaysia',     'like', "%{$search}%")
@@ -64,16 +85,31 @@ class DalEntryController extends Controller
             ->orderBy('row_number')
             ->get();
 
-        return view('dal.manage', compact('entries', 'type', 'search', 'country', 'approver'));
+        $currentCategoryMeta = DalEntry::getCategory($category);
+
+        return view('dal.manage', compact(
+            'entries',
+            'categories',
+            'category',
+            'currentCategoryMeta',
+            'categoryCounts',
+            'type',
+            'search',
+            'country',
+            'approver'
+        ));
     }
 
     /**
      * Show create form.
      */
-    public function create()
+    public function create(Request $request)
     {
+        $categories = DalEntry::$categories;
         $approverColumns = DalEntry::$approverColumns;
-        return view('dal.create', compact('approverColumns'));
+        $selectedCategory = $request->query('category', 'finance');
+
+        return view('dal.create', compact('categories', 'approverColumns', 'selectedCategory'));
     }
 
     /**
@@ -86,41 +122,43 @@ class DalEntryController extends Controller
         $validated['updated_by'] = Auth::id();
 
         // Server-side safety net: if row_number was not explicitly set,
-        // auto-assign the next available number for this type + section_title.
+        // auto-assign the next available number for this category + section_title.
         if (empty($validated['row_number'])) {
             $validated['row_number'] = $this->calcNextRowNumber(
-                $validated['type'],
+                $validated['category'],
+                $validated['type'] ?? '',
                 $validated['section_title']
             );
         }
 
         DalEntry::create($validated);
 
-        return redirect()->route('dal.manage.index', ['type' => $validated['type']])
-            ->with('success', 'DAL entry created successfully.');
+        return redirect()->route('dal.manage.index', [
+            'category' => $validated['category'],
+            'type'     => $validated['type'] ?? '',
+        ])->with('success', 'DAL entry created successfully.');
     }
 
     /**
-     * AJAX endpoint: return the next row_number for a given type + section_title.
-     * Called by the create form as the user types to auto-fill the Row # field.
+     * AJAX endpoint: return the next row_number for a given category + type + section_title.
      */
     public function nextRowNumber(Request $request): \Illuminate\Http\JsonResponse
     {
-        $type         = $request->query('type', 'capital');
+        $category     = $request->query('category', 'finance');
+        $type         = (string) $request->query('type', '');
         $sectionTitle = trim((string) $request->query('section_title', ''));
 
         return response()->json([
-            'next' => $this->calcNextRowNumber($type, $sectionTitle),
+            'next' => $this->calcNextRowNumber($category, $type, $sectionTitle),
         ]);
     }
 
     /**
-     * Calculate MAX(row_number) + 1 for the given type + section_title.
-     * Returns 1 if no matching rows exist yet.
+     * Calculate MAX(row_number) + 1 for the given category + section_title.
      */
-    private function calcNextRowNumber(string $type, string $sectionTitle): int
+    private function calcNextRowNumber(string $category, string $type, string $sectionTitle): int
     {
-        $max = DalEntry::where('type', $type)
+        $max = DalEntry::where('category', $category)
             ->where('section_title', $sectionTitle)
             ->max('row_number');
 
@@ -132,8 +170,10 @@ class DalEntryController extends Controller
      */
     public function edit(DalEntry $dalEntry)
     {
+        $categories = DalEntry::$categories;
         $approverColumns = DalEntry::$approverColumns;
-        return view('dal.edit', compact('dalEntry', 'approverColumns'));
+
+        return view('dal.edit', compact('dalEntry', 'categories', 'approverColumns'));
     }
 
     /**
@@ -146,8 +186,10 @@ class DalEntryController extends Controller
 
         $dalEntry->update($validated);
 
-        return redirect()->route('dal.manage.index', ['type' => $validated['type']])
-            ->with('success', 'DAL entry updated successfully.');
+        return redirect()->route('dal.manage.index', [
+            'category' => $validated['category'],
+            'type'     => $validated['type'] ?? '',
+        ])->with('success', 'DAL entry updated successfully.');
     }
 
     /**
@@ -155,11 +197,14 @@ class DalEntryController extends Controller
      */
     public function destroy(DalEntry $dalEntry)
     {
-        $type = $dalEntry->type;
+        $category = $dalEntry->category;
+        $type     = $dalEntry->type;
         $dalEntry->delete();
 
-        return redirect()->route('dal.manage.index', ['type' => $type])
-            ->with('success', 'DAL entry deleted successfully.');
+        return redirect()->route('dal.manage.index', [
+            'category' => $category,
+            'type'     => $type,
+        ])->with('success', 'DAL entry deleted successfully.');
     }
 
     /**
@@ -167,8 +212,11 @@ class DalEntryController extends Controller
      */
     private function validateEntry(Request $request): array
     {
+        $allowedCategories = implode(',', array_keys(DalEntry::$categories));
+
         return $request->validate([
-            'type'           => ['required', 'in:capital,noncapital'],
+            'category'       => ['required', 'string', 'in:' . $allowedCategories],
+            'type'           => ['nullable', 'string', 'max:50'],
             'section_title'  => ['required', 'string', 'max:255'],
             'row_number'     => ['nullable', 'integer', 'min:1'],
             'malaysia'       => ['nullable', 'string', 'max:100'],

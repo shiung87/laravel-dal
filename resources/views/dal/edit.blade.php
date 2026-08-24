@@ -70,7 +70,7 @@
             <form method="POST" action="{{ route('dal.manage.update', $dalEntry) }}" id="edit-dal-form">
                 @csrf
                 @method('PUT')
-                @include('dal._form', ['approverColumns' => $approverColumns, 'entry' => $dalEntry])
+                @include('dal._form', ['dalEntry' => $dalEntry, 'approverColumns' => $approverColumns])
 
                 <div style="display:flex;align-items:center;gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid #f1f5f9;">
                     <button type="submit" id="update-dal-btn"
@@ -80,7 +80,7 @@
                         Update Entry
                     </button>
 
-                    <a href="{{ route('dal.manage.index', ['type' => $dalEntry->type]) }}"
+                    <a href="{{ route('dal.manage.index', ['category' => $dalEntry->category]) }}"
                        style="display:inline-flex;align-items:center;padding:11px 22px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;transition:background 0.15s;"
                        onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                         Cancel
