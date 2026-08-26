@@ -20,7 +20,7 @@ class AdminUserController extends Controller
         $search = $request->input('search', '');
         $role   = $request->input('role', 'all');
 
-        $query = User::query()->orderBy('created_at', 'desc');
+        $query = User::with('department')->orderBy('created_at', 'desc');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -39,9 +39,10 @@ class AdminUserController extends Controller
         $totalUsers   = User::count();
         $adminUsers   = User::where('is_admin', true)->count();
         $regularUsers = $totalUsers - $adminUsers;
+        $departments  = \App\Models\Department::active()->orderBy('name')->get();
 
         return view('admin.users.index', compact(
-            'users', 'search', 'role', 'totalUsers', 'adminUsers', 'regularUsers'
+            'users', 'search', 'role', 'totalUsers', 'adminUsers', 'regularUsers', 'departments'
         ));
     }
 
@@ -54,15 +55,17 @@ class AdminUserController extends Controller
             'name'              => ['required', 'string', 'max:255'],
             'email'             => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password'          => ['required', 'confirmed', Rules\Password::defaults()],
+            'department_id'     => ['nullable', 'exists:departments,id'],
             'is_admin'          => ['boolean'],
             'send_verification' => ['boolean'],
         ]);
 
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'is_admin' => $request->boolean('is_admin'),
+            'name'          => $data['name'],
+            'email'         => $data['email'],
+            'password'      => Hash::make($data['password']),
+            'department_id' => $data['department_id'] ?? null,
+            'is_admin'      => $request->boolean('is_admin'),
         ]);
 
         if ($request->boolean('send_verification') && $user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail) {
@@ -122,6 +125,30 @@ class AdminUserController extends Controller
         }
 
         return back()->with('error', 'Failed to send password reset email: ' . __($status));
+    }
+
+    /**
+     * Update a user's department.
+     */
+    public function updateDepartment(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'department_id' => ['nullable', 'exists:departments,id'],
+        ]);
+
+        $oldDept = $user->department?->name;
+        $user->department_id = $validated['department_id'] ?: null;
+        $user->save();
+        $user->load('department');
+
+        AuditLogger::log(
+            action:    'user_department_update',
+            subject:   $user,
+            oldValues: ['department' => $oldDept],
+            newValues: ['department' => $user->department?->name],
+        );
+
+        return back()->with('success', "Department for \"{$user->name}\" updated to " . ($user->department?->name ?? 'Unassigned') . ".");
     }
 
     /**

@@ -130,7 +130,35 @@ class DalEntry extends Model
      */
     public static function getCategory(?string $key): array
     {
-        $key = $key ?: 'finance';
+        $key = $key ?: 'all';
+        if ($key === 'all') {
+            return [
+                'code'        => 'ALL',
+                'name'        => 'All Categories',
+                'full_title'  => '🌐 All Categories (Global DAL)',
+                'short_title' => 'All Categories',
+                'badge_color' => 'blue',
+                'icon'        => 'globe',
+                'description' => 'Global search across all Delegation of Authority governance categories',
+            ];
+        }
+
+        try {
+            $cat = DalCategory::where('slug', $key)->first();
+            if ($cat) {
+                return [
+                    'id'          => $cat->id,
+                    'code'        => $cat->code,
+                    'name'        => $cat->name,
+                    'full_title'  => $cat->full_title,
+                    'short_title' => $cat->short_title,
+                    'badge_color' => $cat->badge_color,
+                    'icon'        => $cat->icon,
+                    'description' => $cat->description,
+                ];
+            }
+        } catch (\Throwable $e) {}
+
         return self::$categories[$key] ?? [
             'code'        => '',
             'name'        => ucfirst(str_replace('_', ' ', $key)),

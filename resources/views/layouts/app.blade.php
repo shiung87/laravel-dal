@@ -15,6 +15,16 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('dal_sidebar_collapsed') === 'true' && window.innerWidth > 768) {
+                    document.documentElement.classList.add('sidebar-is-collapsed');
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -50,30 +60,35 @@
             gap: 0;
         }
 
-        /* Hamburger — visible on mobile */
+        /* Sidebar Toggle Button — accessible on desktop & mobile */
         .sidebar-toggle {
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            height: 44px;
-            background: none;
-            border: none;
+            width: 38px;
+            height: 38px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             cursor: pointer;
-            color: #64748b;
-            margin-left: 8px;
+            color: #475569;
+            margin-left: 14px;
             border-radius: 8px;
-            transition: background 0.15s;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
         }
-        .sidebar-toggle:hover { background: #f1f5f9; }
-        .sidebar-toggle svg { width: 20px; height: 20px; fill: currentColor; }
+        .sidebar-toggle:hover {
+            background: #eff6ff;
+            color: #0b3b63;
+            border-color: #bfdbfe;
+        }
+        .sidebar-toggle svg { width: 18px; height: 18px; fill: currentColor; }
 
         .brand-wrap {
             display: flex;
             align-items: center;
             gap: 10px;
-            width: 220px;      /* matches sidebar width */
-            padding-left: 20px;
+            padding-left: 14px;
+            padding-right: 14px;
             text-decoration: none;
         }
 
@@ -195,7 +210,28 @@
             flex-direction: column;
             gap: 2px;
             overflow-y: auto;
-            transition: transform 0.25s;
+            overflow-x: hidden;
+            transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1), padding 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, transform 0.22s ease, border-color 0.22s ease;
+            white-space: nowrap;
+        }
+
+        /* Desktop collapsed state */
+        html.sidebar-is-collapsed .app-sidebar,
+        body.sidebar-collapsed .app-sidebar {
+            width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-right-color: transparent !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+        }
+
+        .sidebar-footer-collapse {
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px solid #f1f5f9;
         }
 
         .sidebar-section-label {
@@ -273,32 +309,47 @@
         }
 
         /* ────────────────────────────────────────
-           MOBILE — sidebar overlay
+           MOBILE — responsive adjustments
         ──────────────────────────────────────── */
         @media (max-width: 768px) {
-            .sidebar-toggle { display: flex; }
-            .brand-wrap { width: auto; }
+            .app-topbar { padding: 0 12px 0 0; }
+            .sidebar-toggle { margin-left: 8px; width: 38px; height: 38px; }
+            .brand-wrap { width: auto; padding-left: 6px; padding-right: 6px; gap: 8px; }
+            .brand-name { font-size: 13px; }
+            .brand-sub { display: none; }
+            .user-btn { padding: 4px 10px 4px 4px; }
+            .user-btn-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 
             .app-sidebar {
                 position: fixed;
-                top: 60px; left: 0; bottom: 0;
-                z-index: 150;
-                transform: translateX(-100%);
-                box-shadow: 4px 0 20px rgba(0,0,0,0.12);
+                top: 0; left: 0; bottom: 0;
+                width: 270px !important;
+                z-index: 350;
+                transform: translateX(-100%) !important;
+                box-shadow: 6px 0 25px rgba(0,0,0,0.25);
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+                padding: 20px 14px;
             }
-            .app-sidebar.open { transform: translateX(0); }
+            .app-sidebar.open {
+                transform: translateX(0) !important;
+                width: 270px !important;
+            }
 
             .sidebar-overlay {
                 display: none;
                 position: fixed; inset: 0;
-                background: rgba(0,0,0,0.3);
-                z-index: 140;
-                top: 60px;
+                background: rgba(15, 23, 42, 0.55);
+                backdrop-filter: blur(2px);
+                z-index: 340;
             }
             .sidebar-overlay.open { display: block; }
 
             .app-page-header { padding: 14px 16px; }
-            .app-content     { padding: 16px; }
+            .app-content     { padding: 14px 12px; }
+
+            .sidebar-footer-collapse { display: none; }
         }
     </style>
 </head>
@@ -380,9 +431,37 @@
 
             <div class="sidebar-section-label">DAL Categories</div>
 
-            @foreach(\App\Models\DalEntry::$categories as $sidebarCatKey => $sidebarCat)
+            @php
+                $user = Auth::user();
+                $userMappedCats = $user ? $user->mappedDalCategories() : collect();
+                $isGlobalActive = request()->routeIs('dal.manage.*') && (request()->query('category', 'all') === 'all');
+
+                if ($userMappedCats->isNotEmpty()) {
+                    $sidebarCategories = [];
+                    foreach ($userMappedCats as $cat) {
+                        $sidebarCategories[$cat->slug] = [
+                            'code'       => $cat->code,
+                            'name'       => $cat->name,
+                            'full_title' => $cat->full_title,
+                        ];
+                    }
+                } else {
+                    $sidebarCategories = \App\Models\DalCategory::getTaxonomyArray();
+                }
+            @endphp
+            <a href="{{ route('dal.manage.index', ['category' => 'all']) }}"
+               class="sidebar-link {{ $isGlobalActive ? 'active' : '' }}"
+               style="font-size:12.5px;padding:7px 12px;font-weight:{{ $isGlobalActive ? '700' : '600' }};"
+               id="nav-dal-all">
+                <span style="font-size:13px;margin-right:2px;">🌐</span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    {{ $userMappedCats->isNotEmpty() ? 'All Mapped Categories' : 'All Categories (Global)' }}
+                </span>
+            </a>
+
+            @foreach($sidebarCategories as $sidebarCatKey => $sidebarCat)
                 @php
-                    $isCatActive = request()->routeIs('dal.manage.*') && (request()->query('category', 'finance') === $sidebarCatKey);
+                    $isCatActive = request()->routeIs('dal.manage.*') && (request()->query('category') === $sidebarCatKey);
                 @endphp
                 <a href="{{ route('dal.manage.index', ['category' => $sidebarCatKey]) }}"
                    class="sidebar-link {{ $isCatActive ? 'active' : '' }}"
@@ -394,15 +473,42 @@
             @endforeach
 
             @if(Auth::user()->is_admin)
-            <div class="sidebar-section-label">Admin</div>
+            <div class="sidebar-section-label">Admin Console</div>
             <a href="{{ route('admin.dashboard') }}"
                class="sidebar-link"
                id="nav-admin-panel">
                 <svg viewBox="0 0 24 24"><path d="M12 1l2.65 5.37L21 7.64l-4.5 4.39L17.65 19 12 16.22 6.35 19l1.15-6.97L3 7.64l6.35-.27L12 1z"/></svg>
-                Admin Panel
-                <span class="sidebar-badge">Admin</span>
+                Admin Dashboard
+            </a>
+            <a href="{{ route('admin.categories.index') }}"
+               class="sidebar-link"
+               style="font-size:12px;padding:6px 12px;"
+               id="nav-admin-categories">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                Category Master
+            </a>
+            <a href="{{ route('admin.departments.index') }}"
+               class="sidebar-link"
+               style="font-size:12px;padding:6px 12px;"
+               id="nav-admin-departments">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+                Department Master
+            </a>
+            <a href="{{ route('admin.mappings.index') }}"
+               class="sidebar-link"
+               style="font-size:12px;padding:6px 12px;"
+               id="nav-admin-mappings">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M10.59 13.41c.41.39.41 1.03 0 1.42-.39.39-1.03.39-1.42 0a5.003 5.003 0 0 1 0-7.07l3.54-3.54a5.003 5.003 0 0 1 7.07 0 5.003 5.003 0 0 1 0 7.07l-1.49 1.49c.01-.82-.12-1.64-.4-2.42l.47-.48a2.982 2.982 0 0 0 0-4.24 2.982 2.982 0 0 0-4.24 0l-3.53 3.53a2.982 2.982 0 0 0 0 4.24zm2.82-2.82c-.41-.39-.41-1.03 0-1.42.39-.39 1.03-.39 1.42 0a5.003 5.003 0 0 1 0 7.07l-3.54 3.54a5.003 5.003 0 0 1-7.07 0 5.003 5.003 0 0 1 0-7.07l1.49-1.49c-.01.82.12 1.64.4 2.43l-.47.47a2.982 2.982 0 0 0 0 4.24 2.982 2.982 0 0 0 4.24 0l3.53-3.53a2.982 2.982 0 0 0 0-4.24z"/></svg>
+                Dept Mapping Matrix
             </a>
             @endif
+
+            <div class="sidebar-footer-collapse">
+                <button type="button" id="sidebar-collapse-btn" class="sidebar-link" style="width: 100%; border: none; background: none; cursor: pointer; color: #94a3b8; font-size: 12.5px;" title="Hide Sidebar (View More Content)">
+                    <svg viewBox="0 0 24 24" style="transform: rotate(180deg);"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    <span>Hide Sidebar</span>
+                </button>
+            </div>
 
         </nav>
 
@@ -438,27 +544,63 @@
             }
         });
 
-        // ── Sidebar toggle (mobile) ──
+        // ── Desktop & Mobile Sidebar Collapse / Expand ──
         const toggleBtn     = document.getElementById('sidebar-toggle-btn');
+        const collapseBtn   = document.getElementById('sidebar-collapse-btn');
         const sidebar       = document.getElementById('app-sidebar');
         const overlay       = document.getElementById('sidebar-overlay');
 
-        function openSidebar() {
-            sidebar.classList.add('open');
-            overlay.classList.add('open');
-            toggleBtn.setAttribute('aria-expanded', 'true');
-        }
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('open');
-            toggleBtn.setAttribute('aria-expanded', 'false');
+        // Sync initial state
+        if (localStorage.getItem('dal_sidebar_collapsed') === 'true' && window.innerWidth > 768) {
+            document.body.classList.add('sidebar-collapsed');
+            document.documentElement.classList.add('sidebar-is-collapsed');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        } else {
+            document.documentElement.classList.remove('sidebar-is-collapsed');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
         }
 
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        function toggleSidebar() {
+            if (window.innerWidth <= 768) {
+                // Mobile behavior: drawer overlay
+                sidebar.classList.contains('open') ? closeMobileSidebar() : openMobileSidebar();
+            } else {
+                // Desktop behavior: collapse / expand
+                const isNowCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                if (isNowCollapsed) {
+                    document.documentElement.classList.add('sidebar-is-collapsed');
+                } else {
+                    document.documentElement.classList.remove('sidebar-is-collapsed');
+                }
+                localStorage.setItem('dal_sidebar_collapsed', isNowCollapsed);
+                if (toggleBtn) toggleBtn.setAttribute('aria-expanded', !isNowCollapsed);
+            }
+        }
+
+        function openMobileSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeMobileSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+        if (collapseBtn) collapseBtn.addEventListener('click', toggleSidebar);
+        if (overlay) overlay.addEventListener('click', closeMobileSidebar);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && window.innerWidth <= 768) closeMobileSidebar();
+            // Shortcut: Ctrl + B or Cmd + B
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                toggleSidebar();
+            }
         });
-        overlay.addEventListener('click', closeSidebar);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
     </script>
 </body>
 </html>

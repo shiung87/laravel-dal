@@ -26,10 +26,9 @@
     .f-textarea { min-height: 80px; resize: vertical; }
     .f-error { color: #dc2626; font-size: 11px; margin-top: 4px; }
     @media (max-width: 640px) {
-        .f-grid-2, .f-grid-3, .f-grid-4 { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 420px) {
-        .f-grid-2, .f-grid-3, .f-grid-4 { grid-template-columns: 1fr; }
+        .f-grid-2, .f-grid-3, .f-grid-4 { grid-template-columns: 1fr !important; }
+        .f-input, .f-select, .f-textarea { font-size: 15px !important; padding: 10px 12px; }
+        .f-section { margin-bottom: 20px; }
     }
 </style>
 

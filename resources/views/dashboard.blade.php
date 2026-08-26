@@ -30,24 +30,77 @@
     @endif
 
     @php
-        $categoryCounts = \App\Models\DalEntry::select('category', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
-            ->groupBy('category')
-            ->pluck('count', 'category')
-            ->toArray();
+        $user = auth()->user();
+        $userMappedCats = $user ? $user->mappedDalCategories() : collect();
+        $userMappedSlugs = $userMappedCats->pluck('slug')->toArray();
+
+        $categoryCountsQuery = \App\Models\DalEntry::select('category', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('category');
+
+        if (!empty($userMappedSlugs)) {
+            $categoryCountsQuery->whereIn('category', $userMappedSlugs);
+        }
+        $categoryCounts = $categoryCountsQuery->pluck('count', 'category')->toArray();
+
+        if ($userMappedCats->isNotEmpty()) {
+            $dashboardCategories = [];
+            foreach ($userMappedCats as $cat) {
+                $dashboardCategories[$cat->slug] = [
+                    'code'        => $cat->code,
+                    'name'        => $cat->name,
+                    'full_title'  => $cat->full_title,
+                    'description' => $cat->description,
+                ];
+            }
+        } else {
+            $dashboardCategories = \App\Models\DalCategory::getTaxonomyArray();
+        }
     @endphp
 
     {{-- ──────────────────────────────────────────────────────────
-         DAL CATEGORIES MATRIX GRID (1.0 to 10.0)
+         DEPARTMENT SSO SYNC RECOMMENDATION HERO
+    ────────────────────────────────────────────────────────── --}}
+    @if(auth()->user()->department && $userMappedCats->isNotEmpty())
+        <div style="background:linear-gradient(135deg,#0b3b63,#1e5f94);border-radius:16px;padding:22px 26px;color:#fff;margin-bottom:24px;box-shadow:0 4px 16px rgba(11,59,99,0.2);">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+                <div>
+                    <div style="font-size:12px;font-weight:700;color:#f7d768;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">
+                        🏢 Synced Department
+                    </div>
+                    <h3 style="font-size:18px;font-weight:800;margin-bottom:6px;">
+                        {{ auth()->user()->department->name }}
+                    </h3>
+                    <p style="font-size:13px;color:rgba(255,255,255,0.85);max-width:560px;">
+                        Based on your corporate department, the following Delegation of Authority Limits (DAL) categories apply strictly to your functional governance area:
+                    </p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    @foreach($userMappedCats as $mCat)
+                        <a href="{{ route('dal.manage.index', ['category' => $mCat->slug]) }}"
+                           style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;transition:background 0.15s;"
+                           onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                            ⭐ {{ $mCat->full_title }} &rarr;
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ──────────────────────────────────────────────────────────
+         DAL CATEGORIES MATRIX GRID (Strictly Mapped or All)
     ────────────────────────────────────────────────────────── --}}
     <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
         <h3 style="font-size:14px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;">
-            Corporate Authority Categories
+            {{ $userMappedCats->isNotEmpty() ? 'Your Department Governance Categories' : 'Corporate Authority Categories' }}
         </h3>
-        <span style="font-size:12px;color:#94a3b8;font-weight:500;">8 Primary Governance Areas</span>
+        <span style="font-size:12px;color:#94a3b8;font-weight:500;">
+            {{ count($dashboardCategories) }} {{ Str::plural('Governance Area', count($dashboardCategories)) }}
+        </span>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
-        @foreach(\App\Models\DalEntry::$categories as $catKey => $cat)
+        @foreach($dashboardCategories as $catKey => $cat)
             @php
                 $count = $categoryCounts[$catKey] ?? 0;
             @endphp
@@ -69,7 +122,7 @@
                         {{ $cat['name'] }}
                     </h4>
                     <p style="font-size:12.5px;color:#64748b;line-height:1.5;margin-bottom:16px;">
-                        {{ $cat['description'] }}
+                        {{ $cat['description'] ?? '' }}
                     </p>
                 </div>
 

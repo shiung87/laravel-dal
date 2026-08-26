@@ -21,6 +21,16 @@
             flex-direction: column;
         }
 
+        /* ── Global Select & Option Dropdown Dark Theme Styling ── */
+        select, option {
+            background-color: #1a1a32 !important;
+            color: #f8fafc !important;
+        }
+        select:focus, select:active {
+            background-color: #1f1f3d !important;
+            border-color: #818cf8 !important;
+        }
+
         /* ── Topbar ── */
         .topbar {
             background: rgba(255,255,255,0.03);
@@ -422,47 +432,8 @@
 
     <div class="app-body">
 
-        {{-- ── Sidebar ── --}}
-        <nav class="sidebar">
-            <div class="sidebar-section">Navigation</div>
-
-            <a href="{{ route('admin.dashboard') }}"
-               class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
-               id="sidebar-dashboard">
-                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                Dashboard
-            </a>
-
-            <a href="{{ route('admin.users.index') }}"
-               class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
-               id="sidebar-users">
-                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                Users & Access
-            </a>
-
-            <a href="{{ route('admin.audit-log') }}"
-               class="nav-link {{ request()->routeIs('admin.audit-log') ? 'active' : '' }}"
-               id="sidebar-audit-log">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 9H7v-2h4v2zm4-4H7v-2h8v2zm0-4H7V8h2v2h6z"/></svg>
-                Audit Log
-            </a>
-
-            <div class="sidebar-section">Settings</div>
-
-            <a href="{{ route('admin.sso.show') }}"
-               class="nav-link {{ request()->routeIs('admin.sso.*') ? 'active' : '' }}"
-               id="sidebar-sso">
-                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                SSO Settings
-            </a>
-
-            <a href="{{ route('admin.email.show') }}"
-               class="nav-link {{ request()->routeIs('admin.email.*') ? 'active' : '' }}"
-               id="sidebar-email">
-                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                Email & Notifications
-            </a>
-        </nav>
+        {{-- ── Unified Sidebar ── --}}
+        @include('admin.partials.sidebar')
 
         {{-- ── Main ── --}}
         <main>
@@ -531,6 +502,7 @@
                         <thead>
                             <tr>
                                 <th>User</th>
+                                <th>Department</th>
                                 <th>Role</th>
                                 <th>Verified</th>
                                 <th>Joined</th>
@@ -556,6 +528,25 @@
                                             <div class="user-info-email">{{ $user->email }}</div>
                                         </div>
                                     </div>
+                                </td>
+
+                                {{-- Department --}}
+                                <td>
+                                    <form method="POST" action="{{ route('admin.users.update-department', $user) }}">
+                                        @csrf
+                                        <select name="department_id" onchange="this.form.submit()"
+                                                style="background-color:#1a1a32;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:600;color:#f8fafc;cursor:pointer;outline:none;max-width:200px;">
+                                            <option value="" style="background-color:#16162c;color:#94a3b8;">-- Unassigned --</option>
+                                            @foreach($departments as $dept)
+                                                <option value="{{ $dept->id }}" {{ $user->department_id === $dept->id ? 'selected' : '' }} style="background-color:#16162c;color:#f8fafc;">
+                                                    {{ $dept->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @if($user->department_name && !$user->department_id)
+                                            <div style="font-size:10.5px;color:#f59e0b;margin-top:2px;">SSO Claim: {{ $user->department_name }}</div>
+                                        @endif
+                                    </form>
                                 </td>
 
                                 {{-- Role --}}

@@ -65,6 +65,12 @@ class SsoController extends Controller
             ?: ($azureUser->getNickname() ?? null)
             ?: explode('@', $email)[0];
 
+        // Extract SSO Department claim
+        $ssoDepartmentName = $rawAttributes['department']
+            ?? ($rawAttributes['jobTitle'] ?? null);
+
+        $department = \App\Models\Department::findOrSyncFromSso($ssoDepartmentName);
+
         // Find existing user or auto-provision employee profile
         $user = User::where('email', $email)->first();
 
@@ -76,9 +82,11 @@ class SsoController extends Controller
                 'email_verified_at' => now(),                    // Azure accounts are enterprise-verified
                 'is_admin'          => false,
                 'is_sso'            => true,
+                'department_id'     => $department?->id,
+                'department_name'   => $ssoDepartmentName,
             ]);
         } else {
-            // Keep verified, mark as SSO, and update name if previously unset
+            // Keep verified, mark as SSO, and update department & name if synced
             $user->is_sso = true;
             if (!$user->email_verified_at) {
                 $user->email_verified_at = now();
@@ -86,15 +94,20 @@ class SsoController extends Controller
             if (empty($user->name) && !empty($name)) {
                 $user->name = $name;
             }
+            if ($department) {
+                $user->department_id = $department->id;
+                $user->department_name = $ssoDepartmentName;
+            }
             $user->save();
         }
 
         Auth::login($user, remember: true);
 
         AuditLogger::log('sso_login', $user, [
-            'provider'   => 'azure',
-            'azure_id'   => $azureUser->getId(),
-            'user_email' => $email,
+            'provider'        => 'azure',
+            'azure_id'        => $azureUser->getId(),
+            'user_email'      => $email,
+            'department_sync' => $ssoDepartmentName,
         ]);
 
         return redirect()->intended(route('dashboard'));

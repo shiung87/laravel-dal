@@ -35,12 +35,37 @@ class DalEntryController extends Controller
 
     public function index(Request $request)
     {
-        $categories = DalEntry::$categories;
-        $categoryKeys = array_keys($categories);
+        $user = auth()->user();
+        $userMappedCategories = $user ? $user->mappedDalCategories() : collect();
+        $userMappedSlugs = $userMappedCategories->pluck('slug')->toArray();
 
-        $category = $request->query('category', 'finance');
-        if (!in_array($category, $categoryKeys, true)) {
-            $category = 'finance';
+        // STRICT DEPARTMENT FILTERING:
+        // If user has a department with mapped categories, strictly restrict available categories
+        if ($userMappedCategories->isNotEmpty()) {
+            $categories = [];
+            foreach ($userMappedCategories as $cat) {
+                $categories[$cat->slug] = [
+                    'id'          => $cat->id,
+                    'code'        => $cat->code,
+                    'name'        => $cat->name,
+                    'full_title'  => $cat->full_title,
+                    'short_title' => $cat->short_title,
+                    'badge_color' => $cat->badge_color,
+                    'icon'        => $cat->icon,
+                    'description' => $cat->description,
+                ];
+            }
+            $allowedCategoryKeys = $userMappedSlugs;
+        } else {
+            $categories = DalCategory::getTaxonomyArray();
+            $allowedCategoryKeys = array_keys($categories);
+        }
+
+        $defaultCategory = 'all';
+        $category = $request->query('category', $defaultCategory);
+
+        if ($category !== 'all' && !in_array($category, $allowedCategoryKeys, true)) {
+            $category = $allowedCategoryKeys[0] ?? 'all';
         }
 
         $type     = $request->query('type', ''); // for finance: 'capital', 'noncapital', 'treasury', or '' (all)
@@ -51,39 +76,61 @@ class DalEntryController extends Controller
         $countryColumn  = self::COUNTRY_COLUMNS[$country]   ?? null;
         $approverColumn = self::APPROVER_COLUMNS[$approver] ?? null;
 
-        // Fetch counts per category for the tab bar badges
-        $categoryCounts = DalEntry::select('category', DB::raw('count(*) as count'))
-            ->groupBy('category')
-            ->pluck('count', 'category')
-            ->toArray();
+        // Fetch counts strictly for the allowed categories
+        $categoryCountsQuery = DalEntry::select('category', DB::raw('count(*) as count'))
+            ->groupBy('category');
 
-        $entriesQuery = DalEntry::where('category', $category);
+        if (!empty($userMappedSlugs)) {
+            $categoryCountsQuery->whereIn('category', $userMappedSlugs);
+        }
 
-        if ($category === 'finance' && filled($type)) {
-            $entriesQuery->where('type', $type);
+        $categoryCounts = $categoryCountsQuery->pluck('count', 'category')->toArray();
+        $totalAllCount = array_sum($categoryCounts);
+
+        $entriesQuery = DalEntry::query();
+
+        if ($category !== 'all') {
+            $entriesQuery->where('category', $category);
+
+            if ($category === 'finance' && filled($type)) {
+                $entriesQuery->where('type', $type);
+            }
+        } else {
+            // In 'all' view, strictly limit records to user's mapped categories if assigned
+            if (!empty($userMappedSlugs)) {
+                $entriesQuery->whereIn('category', $userMappedSlugs);
+            }
         }
 
         $entries = $entriesQuery
             ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
                 $q->where('section_title', 'like', "%{$search}%")
-                  ->orWhere('malaysia',     'like', "%{$search}%")
-                  ->orWhere('singapore',    'like', "%{$search}%")
-                  ->orWhere('australia',    'like', "%{$search}%")
-                  ->orWhere('vietnam',      'like', "%{$search}%")
-                  ->orWhere('japan',        'like', "%{$search}%")
-                  ->orWhere('remarks',      'like', "%{$search}%");
+                  ->orWhere('category',      'like', "%{$search}%")
+                  ->orWhere('malaysia',      'like', "%{$search}%")
+                  ->orWhere('singapore',     'like', "%{$search}%")
+                  ->orWhere('australia',     'like', "%{$search}%")
+                  ->orWhere('vietnam',       'like', "%{$search}%")
+                  ->orWhere('japan',         'like', "%{$search}%")
+                  ->orWhere('remarks',       'like', "%{$search}%");
             }))
             ->when($countryColumn, fn ($q) =>
                 $q->whereNotNull($countryColumn)
-                  ->where($countryColumn, '!=', '-')
+                  ->where(DB::raw("TRIM({$countryColumn})"), '!=', '')
+                  ->where(DB::raw("TRIM({$countryColumn})"), '!=', '-')
             )
             ->when($approverColumn, fn ($q) =>
                 $q->whereNotNull($approverColumn)
-                  ->where($approverColumn, '!=', '')
+                  ->where(DB::raw("TRIM({$approverColumn})"), '!=', '')
             )
-            ->orderBy('section_title')
-            ->orderBy('row_number')
-            ->get();
+            ->get()
+            ->sort(function ($a, $b) {
+                $secCmp = strnatcasecmp($a->section_title ?? '', $b->section_title ?? '');
+                if ($secCmp !== 0) {
+                    return $secCmp;
+                }
+                return ($a->row_number ?? 0) <=> ($b->row_number ?? 0);
+            })
+            ->values();
 
         $currentCategoryMeta = DalEntry::getCategory($category);
 
@@ -93,10 +140,13 @@ class DalEntryController extends Controller
             'category',
             'currentCategoryMeta',
             'categoryCounts',
+            'totalAllCount',
             'type',
             'search',
             'country',
-            'approver'
+            'approver',
+            'userMappedCategories',
+            'userMappedSlugs'
         ));
     }
 
