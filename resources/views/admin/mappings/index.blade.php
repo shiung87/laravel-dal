@@ -41,13 +41,18 @@
 </head>
 <body>
     <header class="topbar">
-        <a href="{{ route('admin.dashboard') }}" class="topbar-brand">
-            <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 1l2.65 5.37L21 7.64l-4.5 4.39L17.65 19 12 16.22 6.35 19l1.15-6.97L3 7.64l6.35-.27L12 1z"/></svg></div>
-            <div>
-                <div class="brand-name">{{ config('app.name', 'Laravel') }}</div>
-                <div class="brand-sub">Admin Console</div>
-            </div>
-        </a>
+        <div style="display:flex;align-items:center;">
+            <button type="button" onclick="toggleAdminSidebar()" class="admin-sidebar-toggle-btn" title="Toggle Side Menu">
+                <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
+            <a href="{{ route('admin.dashboard') }}" class="topbar-brand">
+                <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 1l2.65 5.37L21 7.64l-4.5 4.39L17.65 19 12 16.22 6.35 19l1.15-6.97L3 7.64l6.35-.27L12 1z"/></svg></div>
+                <div>
+                    <div class="brand-name">{{ config('app.name', 'Laravel') }}</div>
+                    <div class="brand-sub">Admin Console</div>
+                </div>
+            </a>
+        </div>
         <div class="topbar-right">
             <div class="user-pill">
                 <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>

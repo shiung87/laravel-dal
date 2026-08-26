@@ -107,6 +107,9 @@
     {{-- Topbar --}}
     <header class="topbar">
         <div class="topbar-brand">
+            <button type="button" onclick="toggleAdminSidebar()" class="admin-sidebar-toggle-btn" title="Toggle Side Menu">
+                <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
             <div class="brand-icon"><svg viewBox="0 0 20 20"><path d="M10 1l2.39 4.84L18 6.82l-4 3.9.94 5.5L10 13.77l-4.94 2.45L6 10.72 2 6.82l5.61-.98L10 1z"/></svg></div>
             <div>
                 <div class="brand-name">{{ config('app.name') }}</div>

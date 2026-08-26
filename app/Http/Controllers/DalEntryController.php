@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DalCategory;
 use App\Models\DalEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -72,6 +73,9 @@ class DalEntryController extends Controller
         $search   = $request->query('search', '');
         $country  = $request->query('country', '');
         $approver = $request->query('approver', '');
+
+        // Record traffic analytics
+        \App\Services\TrafficTracker::track($request, $category, $search, $country, $approver);
 
         $countryColumn  = self::COUNTRY_COLUMNS[$country]   ?? null;
         $approverColumn = self::APPROVER_COLUMNS[$approver] ?? null;

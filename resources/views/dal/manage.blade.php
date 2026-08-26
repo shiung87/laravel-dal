@@ -399,92 +399,104 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $currentSection = null; @endphp
-                                @foreach($entries as $entry)
+                                @php
+                                    // Group consecutive entries by category and section_title
+                                    $sectionGroups = [];
+                                    foreach ($entries as $entry) {
+                                        $groupKey = $entry->category . '___' . ($entry->section_title ?? '');
+                                        $sectionGroups[$groupKey][] = $entry;
+                                    }
+                                @endphp
+
+                                @foreach($sectionGroups as $groupKey => $groupEntries)
                                     @php
-                                        $isNewSection = ($currentSection !== $entry->section_title);
-                                        if ($isNewSection) {
-                                            $currentSection = $entry->section_title;
-                                        }
+                                        $firstEntry = $groupEntries[0];
+                                        $entryCatMeta = \App\Models\DalEntry::getCategory($firstEntry->category);
+                                        $rowCount = count($groupEntries);
                                     @endphp
 
-                                    @if($isNewSection)
-                                        @php
-                                            $entryCatMeta = \App\Models\DalEntry::getCategory($entry->category);
-                                        @endphp
-                                        <tr style="background:#f1f5f9;border-top:2px solid #cbd5e1;border-bottom:1px solid #e2e8f0;">
-                                            <td colspan="{{ 3 + count($visibleCountryCols) + count(\App\Models\DalEntry::$approverColumns) + (auth()->user()->is_admin ? 1 : 0) }}"
-                                                style="padding:10px 14px;font-weight:800;font-size:13px;color:#0b3b63;">
-                                                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                                    <span>📌 {{ $entry->section_title }}</span>
-                                                    @if($category === 'all')
-                                                        <span style="font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(11,59,99,0.1);color:#0b3b63;font-weight:700;">
-                                                            {{ $entryCatMeta['full_title'] ?? $entry->category }}
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endif
-
-                                    <tr style="border-bottom:1px solid #f1f5f9;transition:background 0.1s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                                        <td style="padding:10px 14px;color:#475569;vertical-align:middle;">
-                                            {{ $entry->section_title }}
-                                        </td>
-                                        <td style="padding:10px 8px;text-align:center;font-weight:700;color:#0b3b63;vertical-align:middle;">
-                                            {{ $entry->row_number }}
-                                        </td>
-                                        @foreach($visibleCountryCols as $cCode => $cMeta)
-                                            @php $cCol = $cMeta['col']; @endphp
-                                            <td style="padding:10px;color:#1e293b;font-weight:500;vertical-align:middle;">
-                                                {{ $entry->$cCol ?: '-' }}
-                                            </td>
-                                        @endforeach
-
-                                        {{-- Approver Cells --}}
-                                        @foreach(\App\Models\DalEntry::$approverColumns as $appCol => $appLabel)
-                                            @php
-                                                $val = trim((string)$entry->$appCol);
-                                                $bg = 'transparent';
-                                                $fg = '#64748b';
-                                                if (str_starts_with($val, 'A')) { $bg = '#dcfce7'; $fg = '#15803d'; }
-                                                elseif (str_starts_with($val, 'R')) { $bg = '#fef3c7'; $fg = '#b45309'; }
-                                                elseif (str_starts_with($val, 'P')) { $bg = '#dbeafe'; $fg = '#1d4ed8'; }
-                                                elseif (str_starts_with($val, 'E')) { $bg = '#f3e8ff'; $fg = '#7e22ce'; }
-                                                elseif (str_starts_with($val, 'N')) { $bg = '#f1f5f9'; $fg = '#475569'; }
-                                            @endphp
-                                            <td style="padding:10px 4px;text-align:center;vertical-align:middle;">
-                                                @if(filled($val))
-                                                    <span style="display:inline-block;padding:2px 6px;border-radius:4px;font-weight:700;font-size:11px;background:{{ $bg }};color:{{ $fg }};">
-                                                        {{ $val }}
+                                    {{-- Section Header Banner Row --}}
+                                    <tr style="background:#f1f5f9;border-top:2px solid #cbd5e1;border-bottom:1px solid #e2e8f0;">
+                                        <td colspan="{{ 3 + count($visibleCountryCols) + count(\App\Models\DalEntry::$approverColumns) + (auth()->user()->is_admin ? 1 : 0) }}"
+                                            style="padding:10px 14px;font-weight:800;font-size:13px;color:#0b3b63;">
+                                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                                <span>📌 {{ $firstEntry->section_title }}</span>
+                                                @if($category === 'all')
+                                                    <span style="font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(11,59,99,0.1);color:#0b3b63;font-weight:700;">
+                                                        {{ $entryCatMeta['full_title'] ?? $firstEntry->category }}
                                                     </span>
-                                                @else
-                                                    <span style="color:#cbd5e1;">-</span>
                                                 @endif
-                                            </td>
-                                        @endforeach
-
-                                        <td style="padding:10px 14px;color:#64748b;font-size:11.5px;line-height:1.4;vertical-align:middle;">
-                                            {{ $entry->remarks ?: '-' }}
+                                            </div>
                                         </td>
-
-                                        @if(auth()->user()->is_admin)
-                                            <td style="padding:10px 14px;text-align:center;vertical-align:middle;white-space:nowrap;">
-                                                <a href="{{ route('dal.manage.edit', $entry) }}"
-                                                   style="color:#0b3b63;font-weight:700;text-decoration:none;margin-right:8px;" title="Edit">
-                                                    Edit
-                                                </a>
-                                                <form method="POST" action="{{ route('dal.manage.destroy', $entry) }}" style="display:inline;"
-                                                      onsubmit="return confirm('Are you sure you want to delete this clause (Row {{ $entry->row_number }})?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" style="color:#dc2626;background:none;border:none;cursor:pointer;font-weight:600;font-size:12px;padding:0;">
-                                                        Delete
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        @endif
                                     </tr>
+
+                                    {{-- Data Rows with Merged Section Cell --}}
+                                    @foreach($groupEntries as $idx => $entry)
+                                        <tr style="border-bottom:1px solid #f1f5f9;transition:background 0.1s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                                            @if($idx === 0)
+                                                <td rowspan="{{ $rowCount }}"
+                                                    style="padding:12px 14px;color:#1e293b;font-weight:600;vertical-align:top;background:#fff;border-right:1px solid #f1f5f9;border-bottom:1px solid #e2e8f0;">
+                                                    <div style="font-size:12.5px;color:#1e293b;line-height:1.45;">
+                                                        {{ $entry->section_title }}
+                                                    </div>
+                                                </td>
+                                            @endif
+
+                                            <td style="padding:10px 8px;text-align:center;font-weight:700;color:#0b3b63;vertical-align:middle;">
+                                                {{ $entry->row_number }}
+                                            </td>
+                                            @foreach($visibleCountryCols as $cCode => $cMeta)
+                                                @php $cCol = $cMeta['col']; @endphp
+                                                <td style="padding:10px;color:#1e293b;font-weight:500;vertical-align:middle;">
+                                                    {{ $entry->$cCol ?: '-' }}
+                                                </td>
+                                            @endforeach
+
+                                            {{-- Approver Cells --}}
+                                            @foreach(\App\Models\DalEntry::$approverColumns as $appCol => $appLabel)
+                                                @php
+                                                    $val = trim((string)$entry->$appCol);
+                                                    $bg = 'transparent';
+                                                    $fg = '#64748b';
+                                                    if (str_starts_with($val, 'A')) { $bg = '#dcfce7'; $fg = '#15803d'; }
+                                                    elseif (str_starts_with($val, 'R')) { $bg = '#fef3c7'; $fg = '#b45309'; }
+                                                    elseif (str_starts_with($val, 'P')) { $bg = '#dbeafe'; $fg = '#1d4ed8'; }
+                                                    elseif (str_starts_with($val, 'E')) { $bg = '#f3e8ff'; $fg = '#7e22ce'; }
+                                                    elseif (str_starts_with($val, 'N')) { $bg = '#f1f5f9'; $fg = '#475569'; }
+                                                @endphp
+                                                <td style="padding:10px 4px;text-align:center;vertical-align:middle;">
+                                                    @if(filled($val))
+                                                        <span style="display:inline-block;padding:2px 6px;border-radius:4px;font-weight:700;font-size:11px;background:{{ $bg }};color:{{ $fg }};">
+                                                            {{ $val }}
+                                                        </span>
+                                                    @else
+                                                        <span style="color:#cbd5e1;">-</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+
+                                            <td style="padding:10px 14px;color:#64748b;font-size:11.5px;line-height:1.4;vertical-align:middle;">
+                                                {{ $entry->remarks ?: '-' }}
+                                            </td>
+
+                                            @if(auth()->user()->is_admin)
+                                                <td style="padding:10px 14px;text-align:center;vertical-align:middle;white-space:nowrap;">
+                                                    <a href="{{ route('dal.manage.edit', $entry) }}"
+                                                       style="color:#0b3b63;font-weight:700;text-decoration:none;margin-right:8px;" title="Edit">
+                                                        Edit
+                                                    </a>
+                                                    <form method="POST" action="{{ route('dal.manage.destroy', $entry) }}" style="display:inline;"
+                                                          onsubmit="return confirm('Are you sure you want to delete this clause (Row {{ $entry->row_number }})?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" style="color:#dc2626;background:none;border:none;cursor:pointer;font-weight:600;font-size:12px;padding:0;">
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
                                 @endforeach
                             </tbody>
                         </table>
