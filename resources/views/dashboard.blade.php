@@ -136,6 +136,11 @@
         @endforeach
     </div>
 
+    {{-- ──────────────────────────────────────────────────────────
+         DAL AUTHORITY LIMITS LEGEND
+    ────────────────────────────────────────────────────────── --}}
+    @include('dal.partials.legend')
+
     {{-- Bottom helper cards --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
         <a href="{{ route('profile.edit') }}" id="card-profile"

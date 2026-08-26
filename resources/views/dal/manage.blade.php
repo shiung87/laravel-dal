@@ -298,25 +298,38 @@
                             @endforeach
                         </div>
 
-                        {{-- Approver filter --}}
-                        <div class="approver-select-wrap" style="display:flex;align-items:center;gap:8px;">
-                            <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">Filter Approver:</span>
-                            <select onchange="window.location.href=this.value"
-                                    style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:12.5px;color:#374151;background:#f9fafb;outline:none;cursor:pointer;">
-                                <option value="{{ route('dal.manage.index', ['category' => $category, 'type' => $type, 'search' => $search, 'country' => $country, 'approver' => '']) }}">
-                                    All Roles
-                                </option>
-                                @foreach(\App\Models\DalEntry::$approverColumns as $appCol => $appLabel)
-                                    <option value="{{ route('dal.manage.index', ['category' => $category, 'type' => $type, 'search' => $search, 'country' => $country, 'approver' => strtoupper($appCol)]) }}"
-                                            {{ $approver === strtoupper($appCol) ? 'selected' : '' }}>
-                                        {{ $appLabel }}
+                        {{-- Approver filter & Legend Toggle --}}
+                        <div class="approver-select-wrap" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">Filter Approver:</span>
+                                <select onchange="window.location.href=this.value"
+                                        style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:12.5px;color:#374151;background:#f9fafb;outline:none;cursor:pointer;">
+                                    <option value="{{ route('dal.manage.index', ['category' => $category, 'type' => $type, 'search' => $search, 'country' => $country, 'approver' => '']) }}">
+                                        All Roles
                                     </option>
-                                @endforeach
-                            </select>
+                                    @foreach(\App\Models\DalEntry::$approverColumns as $appCol => $appLabel)
+                                        <option value="{{ route('dal.manage.index', ['category' => $category, 'type' => $type, 'search' => $search, 'country' => $country, 'approver' => strtoupper($appCol)]) }}"
+                                                {{ $approver === strtoupper($appCol) ? 'selected' : '' }}>
+                                            {{ $appLabel }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <button type="button" onclick="toggleDalLegend()" id="btn-toggle-legend"
+                                    style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:12.5px;font-weight:700;color:#0b3b63;cursor:pointer;transition:all 0.15s;"
+                                    onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                                <span>ℹ️</span> Legend
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {{-- ──────────────────────────────────────────────────────────
+                 DAL AUTHORITY LEGEND COMPONENT
+            ────────────────────────────────────────────────────────── --}}
+            @include('dal.partials.legend')
 
             {{-- ──────────────────────────────────────────────────────────
                  ENTRIES TABLE MATRIX
@@ -480,4 +493,17 @@
             @endif
         </div>
     </div>
+
+    <script>
+        function toggleDalLegend() {
+            const legendBox = document.getElementById('dal-legend-box');
+            if (legendBox) {
+                if (legendBox.style.display === 'none') {
+                    legendBox.style.display = 'block';
+                } else {
+                    legendBox.style.display = 'none';
+                }
+            }
+        }
+    </script>
 </x-app-layout>
